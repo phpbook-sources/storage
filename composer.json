@@ -1,0 +1,23 @@
+{
+    "name": "phpbook/storage",
+    "type": "library",
+    "description": "PHP Storage Library",
+    "keywords": ["php","storage", "fast", "lightweight"],
+    "homepage": "https://github.com/phpbook-sources/storage",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "PHPBook",
+            "email": "phpbook@programmer.net",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPBook\\Storage\\": "library/"
+        }
+    }
+}
