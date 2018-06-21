@@ -4,7 +4,7 @@ abstract class Parse {
     
   public static function getByJson(String $contents) {
   
-    return file_get_contents($contents);
+    return json_decode($contents);
 
   }
 

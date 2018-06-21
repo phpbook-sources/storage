@@ -1,8 +1,8 @@
 <?php namespace PHPBook\Storage;
 
-class Local {
+abstract class Local {
     
-	public function getContents(String $file): ?String {
+	public static function getContents(String $file): ?String {
 		
 		if (is_file($file)) {
 			
