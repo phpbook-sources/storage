@@ -3,6 +3,7 @@
 + [Composer Install](#composer-install)
 + [Declare Configurations](#declare-configurations)
 + [Manager](#manager)
++ [Parse](#parse)
 
 ### About Storage
 
@@ -130,5 +131,17 @@ foreach($connections as $code => $connection) {
 	if ($boolean) {
 		//done
 	};
-		
+
+```
+
+### Parse
+
+```php
+
+	//getting string contents to objects
+
+	$item = \PHPBook\Storage\Parse::getByJson($stringJson);
+
+	$item = \PHPBook\Storage\Parse::getByXml($stringXML);
+
 ```
