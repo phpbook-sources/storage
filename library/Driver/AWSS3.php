@@ -149,6 +149,8 @@ class AWSS3 extends Adapter {
 
 		$httpstatus = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
+		curl_close($ch);
+
 		return [$response, $httpstatus];
 
 	}
