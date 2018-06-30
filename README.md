@@ -3,11 +3,13 @@
 + [Composer Install](#composer-install)
 + [Declare Configurations](#declare-configurations)
 + [Manager](#manager)
++ [Validation](#validation)
 + [Parse](#parse)
 
 ### About Storage
 
 - A lightweight storage PHP library available for AWSS3, FTP, LOCAL.
+- Requires PHP Extension FINFO.
 
 ### Composer Install
 
@@ -130,6 +132,26 @@ foreach($connections as $code => $connection) {
 
 	if ($boolean) {
 		//done
+	};
+
+```
+
+### Validation
+
+```php
+
+	$contents = 'file-buffer-contents';
+
+	$mimes = ['image']; //or ['image/jpeg', 'image/png']
+	
+	$sizeKiloBytes = 150;
+
+	if (\PHPBook\Storage\Validation::isInMimeTypes($contents, $mimes)) {
+		//file is ok
+	};
+
+	if (\PHPBook\Storage\Validation::isInLimitsKilobytes($contents, $sizeKiloBytes)) {
+		//file is ok
 	};
 
 ```
