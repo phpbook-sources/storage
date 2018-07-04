@@ -103,7 +103,7 @@ foreach($connections as $code => $connection) {
 			->get();
 
 	if ($contents) {
-		//contents
+		//contents not null
 	};
 			
 	// write and overwrite
