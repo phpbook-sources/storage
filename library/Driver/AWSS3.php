@@ -348,11 +348,15 @@ class AWSS3 extends Adapter {
 					
 				};
 	
+			} else {
+
+				break;
+
 			};
 	
 		};
 		
-		return false;
+		return true;
 	}
 
 	public function deleteDirectory(String $directory): Bool {
@@ -361,15 +365,58 @@ class AWSS3 extends Adapter {
 
 		$location = str_replace(['\\', '/'], '/', $location);
 
-		list($response, $httpstatus) = $this->resource($location, null, 'DELETE');
+		while(true) {
 
-		if (($httpstatus >= 200) and ($httpstatus <= 299)) {
+			list($response, $httpstatus) = $this->resource('', null, 'GET', 'prefix=' . $location);
+			
+			if (($httpstatus >= 200) and ($httpstatus <= 299)) {
 
-			return true;
+				$files = json_decode(json_encode(simplexml_load_string($response)), true);
+	
+				$deletes = [];
+	
+				if (array_key_exists('Contents', $files)) {
 
+					if (array_key_exists('Key', $files['Contents'])) {
+	
+						if ($files['Contents']['Key'] != $files['Prefix']) {
+		
+							$deletes[] = $files['Contents']['Key'];
+						};
+		
+					} else {
+		
+						foreach($files['Contents'] as $content) {
+		
+							$deletes[] = $content['Key'];
+			
+						};
+		
+					};
+
+				};
+	
+				if (count($deletes) == 0) {
+	
+					break;
+	
+				};
+	
+				foreach($deletes as $delete) {
+	
+					$this->deleteFile($delete);
+					
+				};
+	
+			} else {
+
+				break;
+
+			};
+	
 		};
 
-		return false;
+		return true;
 
 	}
 
