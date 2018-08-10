@@ -1,12 +1,12 @@
 <?php namespace PHPBook\Storage;
 
-class Storage {
+class Directory {
     
     private $connectionCode;
 
-    private $file;
+    private $directory;
 
-    public function setConnectionCode(String $connectionCode): Storage {
+    public function setConnectionCode(String $connectionCode): Directory {
     	$this->connectionCode = $connectionCode;
     	return $this;
     }
@@ -15,16 +15,16 @@ class Storage {
     	return $this->connectionCode;
     }
 
-    public function setFile(String $file): Storage {
-    	$this->file = $file;
+    public function setDirectory(String $directory): Directory {
+    	$this->directory = $directory;
     	return $this;
     }
 
-    public function getFile(): ?String {
-    	return $this->file;
+    public function getDirectory(): ?String {
+    	return $this->directory;
 	}
 
-    public function get(): ?String {
+    public function write(): Bool {
 
     	$connection = \PHPBook\Storage\Configuration\Storage::getConnection($this->getConnectionCode());
 
@@ -32,35 +32,7 @@ class Storage {
 
 			try {
                 
-                return $connection->getDriver()->getFile($this->getFile());
-                
-            } catch(\Exception $e) {
-
-                if ($connection->getExceptionCatcher()) {
-
-                    $connection->getExceptionCatcher()($e->getMessage());
-                    
-                };
-
-                return null;
-
-            };
-
-    	};
-
-    	return null;
-
-    }
-
-    public function write($contents): Bool {
-
-    	$connection = \PHPBook\Storage\Configuration\Storage::getConnection($this->getConnectionCode());
-
-    	if (($connection) and ($connection->getDriver())) {
-
-			try {
-                
-                return $connection->getDriver()->writeFile($this->getFile(), $contents);
+                return $connection->getDriver()->writeDirectory($this->getDirectory());
                 
             } catch(\Exception $e) {
 
@@ -79,7 +51,7 @@ class Storage {
 
     }
 
-    public function move(String $fileNew): Bool {
+    public function move(String $directoryNew): Bool {
         
         $connection = \PHPBook\Storage\Configuration\Storage::getConnection($this->getConnectionCode());
 
@@ -87,7 +59,7 @@ class Storage {
 
 			try {
                 
-                return $connection->getDriver()->moveFile($this->getFile(), $fileNew);
+                return $connection->getDriver()->moveDirectory($this->getDirectory(), $directoryNew);
                 
             } catch(\Exception $e) {
 
@@ -114,7 +86,7 @@ class Storage {
 
 			try {
                 
-                return $connection->getDriver()->deleteFile($this->getFile());
+                return $connection->getDriver()->deleteDirectory($this->getDirectory());
                 
             } catch(\Exception $e) {
 

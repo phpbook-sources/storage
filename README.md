@@ -96,7 +96,7 @@ foreach($connections as $code => $connection) {
 
 	//Connection code is not required if you set default connection
 	
-	// get
+	// get file
 	$contents = (new \PHPBook\Storage\Storage)
 			->setConnectionCode('other')
 			->setFile('path/in/storage/to/file/file.jpeg')
@@ -106,7 +106,7 @@ foreach($connections as $code => $connection) {
 		//contents not null
 	};
 			
-	// write and overwrite
+	// write and overwrite file, auto create missing directories
 	$boolean = (new \PHPBook\Storage\Storage)
 			->setFile('path/in/storage/to/file/file.jpeg')
 			->write($contents);
@@ -115,7 +115,7 @@ foreach($connections as $code => $connection) {
 		//done
 	};
 
-	// write and overwrite from local file path
+	// write and overwrite file from local file path, auto create missing directories
 	$boolean = (new \PHPBook\Storage\Storage)
 			->setFile('path/in/storage/to/file/file.jpeg')
 			->write(\PHPBook\Storage\Local::getContents('absolute/local/file/path'));
@@ -124,10 +124,46 @@ foreach($connections as $code => $connection) {
 		//done
 	};
 
-	// delete
+	// move file, auto create missing directories
+	$boolean = (new \PHPBook\Storage\Storage)
+			->setFile('path/in/storage/to/file/file.jpeg')
+			->move('path/in/storage/to/file/file-rename.jpeg');
+
+	if ($boolean) {
+		//done
+	};
+
+	// delete file
 	$boolean = (new \PHPBook\Storage\Storage)
 			->setConnectionCode('other')
-			->setFile('path/in/storage/to/file/file.jpeg')
+			->setFile('path/in/storage/to/file/file-rename.jpeg')
+			->delete();
+
+	if ($boolean) {
+		//done
+	};
+
+	// write directory, auto create missing parents directories
+	$boolean = (new \PHPBook\Storage\Directory)
+			->setDirectory('path/in/storage/to/files')
+			->write();
+
+	if ($boolean) {
+		//done
+	};
+
+	// move directory, auto create missing parents directories
+	$boolean = (new \PHPBook\Storage\Directory)
+			->setDirectory('path/in/storage/to/files')
+			->move('new/path/in/storage/to/files');
+
+	if ($boolean) {
+		//done
+	};
+
+	// delete directory and all its contents recursively
+	$boolean = (new \PHPBook\Storage\Directory)
+			->setDirectory('path/in/storage/to/files')
 			->delete();
 
 	if ($boolean) {

@@ -46,13 +46,17 @@ class AWSS3 extends Adapter {
 		return $this;
 	}
 
-	public function request($file, $contents, $action) {
+	private function resource($file, $contents, $action, $query = null, $headers = []) {
 		
 		$host_name = $this->getBucket() . '.s3.amazonaws.com';
 
 		if ($action == 'PUT') {
 
 			$content = $contents;
+
+		} else {
+
+			$content = '';
 
 		};
 
@@ -68,11 +72,17 @@ class AWSS3 extends Adapter {
 		$date = gmdate('Ymd');
 
 		$request_headers = array();
+		$request_headers['Content-Length'] = strlen($content);
 		$request_headers['Content-Type'] = $content_type;
 		$request_headers['Date'] = $timestamp;
 		$request_headers['Host'] = $host_name;
 		$request_headers['x-amz-acl'] = $content_acl;
 		$request_headers['x-amz-content-sha256'] = hash('sha256', $content);
+		
+		foreach($headers as $header_key => $header_value) {
+			$request_headers[$header_key] = $header_value;
+		};
+
 		ksort($request_headers);
 
 		$canonical_headers = [];
@@ -87,10 +97,27 @@ class AWSS3 extends Adapter {
 		}
 		$signed_headers = implode(";", $signed_headers);
 
+		if ($query) {
+
+			$query_strings = explode('&', $query);
+
+			$query_strings_parse = [];
+
+			foreach($query_strings as $query_string) {
+
+				list($query_string_name, $query_string_value) = explode('=', $query_string);
+
+				$query_strings_parse[] = urlencode($query_string_name) . '=' . urlencode($query_string_value);
+			};
+
+			$query = implode('&', $query_strings_parse);
+
+		};
+
 		$canonical_request = [];
 		$canonical_request[] = $action;
 		$canonical_request[] = "/" . $content_title;
-		$canonical_request[] = "";
+		$canonical_request[] = ($query ? ($query) : '');
 		$canonical_request[] = $canonical_headers;
 		$canonical_request[] = "";
 		$canonical_request[] = $signed_headers;
@@ -127,13 +154,14 @@ class AWSS3 extends Adapter {
 		$authorization = 'AWS4-HMAC-SHA256' . ' ' . implode( ',', $authorization);
 
 		$curl_headers = [ 'Authorization: ' . $authorization ];
+
 		foreach($request_headers as $key => $value) {
 			$curl_headers[] = $key . ": " . $value;
 		};
 
-		$url = 'https://' . $host_name . '/' . $content_title;
+		$url = 'https://' . $host_name . ($content_title ? '/' . $content_title : '');
 
-		$ch = curl_init($url);
+		$ch = curl_init($url . ($query ? '?'.$query : ''));
 		curl_setopt($ch, CURLOPT_HEADER, false);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $curl_headers);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -142,7 +170,9 @@ class AWSS3 extends Adapter {
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $action);
 
 		if ($action == 'PUT') {
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $content);
+			if ($content) {
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $content);
+			};
 		};
 
 		$response = curl_exec($ch);
@@ -155,9 +185,11 @@ class AWSS3 extends Adapter {
 
 	}
 
-    public function get(String $file): ?String {
+    public function getFile(String $file): ?String {
 
-		list($response, $httpstatus) = $this->resource($file, null, 'GET');
+		$location = str_replace(['\\', '/'], '/', $file);
+
+		list($response, $httpstatus) = $this->resource($location, null, 'GET');
 
 		if (($httpstatus >= 200) and ($httpstatus <= 299)) {
 
@@ -169,9 +201,11 @@ class AWSS3 extends Adapter {
 
 	}
 	
-	public function write(String $file, String $contents): Bool {
+	public function writeFile(String $file, String $contents): Bool {
 		
-		list($response, $httpstatus) = $this->resource($file, $contents, 'PUT');
+		$location = str_replace(['\\', '/'], '/', $file);
+		
+		list($response, $httpstatus) = $this->resource($location, $contents, 'PUT');
 
 		if (($httpstatus >= 200) and ($httpstatus <= 299)) {
 
@@ -183,9 +217,45 @@ class AWSS3 extends Adapter {
 		
 	}
 	
-	public function delete(String $file): Bool {
+	public function moveFile(String $fileNow, String $fileNew): Bool {
 
-		list($response, $httpstatus) = $this->resource($file, null, 'DELETE');
+		$locationNow = str_replace(['\\', '/'], '/', $fileNow);
+
+		$locationNew = str_replace(['\\', '/'], '/', $fileNew);
+
+		$get = $this->getFile($locationNow);
+
+		if ($get) {
+
+			$write = $this->writeFile($locationNew, $get);
+
+			if ($write) {
+
+				$delete = $this->deleteFile($locationNow);
+
+				if ($delete) {
+
+					return true;
+
+				} else {
+
+					$this->deleteFile($locationNew);
+
+				};
+
+			};
+			
+		};	
+
+		return false;
+
+	}
+
+	public function deleteFile(String $file): Bool {
+		
+		$location = str_replace(['\\', '/'], '/', $file);
+
+		list($response, $httpstatus) = $this->resource($location, null, 'DELETE');
 
 		if (($httpstatus >= 200) and ($httpstatus <= 299)) {
 
@@ -195,6 +265,112 @@ class AWSS3 extends Adapter {
 
 		return false;
 
-    }
+	}
+
+	public function writeDirectory(String $directory): Bool {
+
+		$location = $directory . (substr($directory, -1) != '/' ? '/' : '');
+
+		$location = str_replace(['\\', '/'], '/', $location);
+
+		list($response, $httpstatus) = $this->resource($location, '', 'PUT');
+
+		if (($httpstatus >= 200) and ($httpstatus <= 299)) {
+
+			return true;
+
+		};
+
+		return false;
+		
+	}
+
+	public function moveDirectory(String $directoryNow, String $directoryNew): Bool {
+
+		$locationNow = $directoryNow . (substr($directoryNow, -1) != '/' ? '/' : '');
+
+		$locationNow = str_replace(['\\', '/'], '/', $locationNow);
+
+		$locationNew = $directoryNew . (substr($directoryNew, -1) != '/' ? '/' : '');
+
+		$locationNew = str_replace(['\\', '/'], '/', $locationNew);
+
+		while(true) {
+
+			list($response, $httpstatus) = $this->resource('', null, 'GET', 'prefix=' . $locationNow);
+			
+			if (($httpstatus >= 200) and ($httpstatus <= 299)) {
+
+				$files = json_decode(json_encode(simplexml_load_string($response)), true);
+	
+				$rewrites = [];
+	
+				if (array_key_exists('Contents', $files)) {
+
+					if (array_key_exists('Key', $files['Contents'])) {
+	
+						if ($files['Contents']['Key'] != $files['Prefix']) {
+		
+							$rewrites[] = $files['Contents']['Key'];
+						};
+		
+					} else {
+		
+						foreach($files['Contents'] as $content) {
+		
+							$rewrites[] = $content['Key'];
+			
+						};
+		
+					};
+
+				};
+	
+				if (count($rewrites) == 0) {
+	
+					break;
+	
+				};
+	
+				foreach($rewrites as $rewrite) {
+	
+					if (substr($rewrite, 0, strlen($locationNow)) == $locationNow) {
+						$filename = substr($rewrite, strlen($locationNow));
+					};
+
+					list($copyContents, $copyHttpStatus) = $this->resource($locationNew . $filename, '', 'PUT', '', ['x-amz-copy-source' => $this->getBucket() . '/' . $rewrite]);
+
+					if (($copyHttpStatus >= 200) and ($copyHttpStatus <= 299)) {
+
+						$this->deleteFile($rewrite);
+
+					};
+					
+				};
+	
+			};
+	
+		};
+		
+		return false;
+	}
+
+	public function deleteDirectory(String $directory): Bool {
+		
+		$location = $directory . (substr($directory, -1) != '/' ? '/' : '');
+
+		$location = str_replace(['\\', '/'], '/', $location);
+
+		list($response, $httpstatus) = $this->resource($location, null, 'DELETE');
+
+		if (($httpstatus >= 200) and ($httpstatus <= 299)) {
+
+			return true;
+
+		};
+
+		return false;
+
+	}
 
 }

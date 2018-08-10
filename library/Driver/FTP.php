@@ -2,6 +2,8 @@
 
 class FTP extends Adapter  {
     	
+    private $connection;
+
     private $host;
 
     private $port;
@@ -57,47 +59,65 @@ class FTP extends Adapter  {
 		return $this;
 	}
 
-	public function connect() {
+	public function connection() {
 
-		$connection = @ftp_connect($this->getHost(), $this->getPort());
-		
-		if ($this->getUser()) {
+		if ($this->connection) {
 
-			ftp_pasv($connection, TRUE);
-
-			$auth = @ftp_login($connection, $this->getUser(), $this->getPassword());
+			return $this->connection;
 
 		} else {
 
-			$auth = true;
-
-		};
+			$connection = @ftp_connect($this->getHost(), $this->getPort());
 		
-		if ($connection) {
+			if ($this->getUser()) {
 
-			if ($auth) {
+				$auth = @ftp_login($connection, $this->getUser(), $this->getPassword());
 
-				return $connection;
+			} else {
+
+				$auth = true;
 
 			};
 
-		};
+			$this->connection = false;
+			
+			if ($connection) {
 
-		return false;
+				if ($auth) {
+
+					ftp_pasv($connection, TRUE);
+
+					$this->connection = $connection;
+
+				} else {
+
+					ftp_close($connection);
+
+				};
+
+			};
+
+			return $this->connection;
+
+		};		
 
 	}
 
-	public function disconnect($connection) {
+	public function disconnect() {
 
-		ftp_close($connection);
+		ftp_close($this->connection);
+
+		$this->connection = false;
 
 	}
 
-	public function get(String $file): ?String {
+	public function getFile(String $file): ?String {
 		
-		$location = str_replace(['\'', '/'], '/', $file);
+		$location = str_replace(['\\', '/'], '/', $this->getDirectory() . DIRECTORY_SEPARATOR . $file);
 	
-		$connection = $this->connect();
+		$connection = $this->connection();
+
+		ftp_chdir($connection, '/');
 	
 		if ($connection) {
 
@@ -109,19 +129,19 @@ class FTP extends Adapter  {
 
 			ob_end_clean();
 			
-			$this->disconnect($connection);
+			$this->disconnect();
 
 			return $data;
 
 		};
 
-		$this->disconnect($connection);
+		$this->disconnect();
 	
 		return null;
 		
 	}
 	
-	public function write(String $file, String $contents): Bool {
+	public function writeFile(String $file, String $contents): Bool {
 
 		$tmpFile = tmpfile();
 
@@ -131,15 +151,17 @@ class FTP extends Adapter  {
 
 		$tmpMetaData = stream_get_meta_data($tmpFile);
 
-		$remotefile = str_replace(['\'', '/'], '/', $file);
+		$remotefile = str_replace(['\\', '/'], '/', $this->getDirectory() . DIRECTORY_SEPARATOR . $file);
 		
-		$connection = $this->connect();
+		$connection = $this->connection();
+
+		ftp_chdir($connection, '/');
 		
 		if ($connection) {
-
+			
 			$subdiretories = explode('/', $remotefile);
 
-			array_pop($subdiretories);
+			$file_name = array_pop($subdiretories);
 
 			$levels_directories = '/';
 			
@@ -148,13 +170,15 @@ class FTP extends Adapter  {
 			foreach($subdiretories as $directoy) {
 				$levels_directories .= $directoy . '/';
 				if (!@ftp_chdir($connection, $directoy)) {
-					@ftp_mkdir($connection, $directoy);
+					ftp_mkdir($connection, $directoy);
 				};
 			};
 
-			if (@ftp_put($connection, '/' . $remotefile, $tmpMetaData['uri'], FTP_BINARY)) {
+			ftp_chdir($connection, '/');
 
-				$this->disconnect($connection);
+			if (@ftp_put($connection, $remotefile, $tmpMetaData['uri'], FTP_BINARY)) {
+				
+				$this->disconnect();
 
 				return true;
 
@@ -162,23 +186,55 @@ class FTP extends Adapter  {
 
 		};
 
-		$this->disconnect($connection);
+		$this->disconnect();
 
 		return false;
 
 	}
 	
-	public function delete(String $file): Bool {
+	public function moveFile(String $fileNow, String $fileNew): Bool {
 
-		$remotefile = str_replace(['\'', '/'], '/', $file);
+		$get = $this->getFile($fileNow);
+
+		if ($get) {
+
+			$write = $this->writeFile($fileNew, $get);
+
+			if ($write) {
+
+				$delete = $this->deleteFile($fileNow);
+
+				if ($delete) {
+
+					return true;
+
+				} else {
+
+					$this->deleteFile($fileNew);
+
+				};
+
+			};
+			
+		};	
+
+		return false;
+
+	}
+
+	public function deleteFile(String $file): Bool {
+
+		$remotefile = str_replace(['\\', '/'], '/', $this->getDirectory() . DIRECTORY_SEPARATOR . $file);
 		
-		$connection = $this->connect();
+		$connection = $this->connection();
+
+		ftp_chdir($connection, '/');
 		
 		if ($connection) {
 
 			if (@ftp_delete($connection, '/' . $remotefile)) {
 			
-				$this->disconnect($connection);
+				$this->disconnect();
 
 				return true;
 
@@ -186,10 +242,131 @@ class FTP extends Adapter  {
 
 		};
 
-		$this->disconnect($connection);
+		$this->disconnect();
 
 		return false;
 
-    }
+	}
+	
+	public function writeDirectory(String $directory): Bool {
+
+		$connection = $this->connection();
+
+		ftp_chdir($connection, '/');
+		
+		$subdiretories = str_replace(['\\', '/'], '/', $this->getDirectory() . DIRECTORY_SEPARATOR . $directory);
+
+		if ($connection) {
+
+			$subdiretories = explode('/', $subdiretories);
+
+			$levels_directories = '/';
+			
+			ftp_chdir($connection, '/');
+			
+			foreach($subdiretories as $directoy) {
+				$levels_directories .= $directoy . '/';
+				if (!@ftp_chdir($connection, $directoy)) {
+					$createdir = @ftp_mkdir($connection, $directoy);
+					if ($createdir === false) {
+						$this->disconnect();
+						return false;
+					};
+				};
+			};
+
+			$this->disconnect();
+
+			return true;
+
+		};
+
+		$this->disconnect();
+
+		return false;
+		
+	}
+
+	public function moveDirectory(String $directoryNow, String $directoryNew): Bool {
+		
+		$subdirectoryNow = str_replace(['\\', '/'], '/', $this->getDirectory() . DIRECTORY_SEPARATOR . $directoryNow);
+
+		$subdirectoryNew = str_replace(['\\', '/'], '/', $this->getDirectory() . DIRECTORY_SEPARATOR . $directoryNew);
+
+		$connection = $this->connection();
+
+		ftp_chdir($connection, '/');
+
+		if ($connection) {
+
+			if (@ftp_rename($connection, $subdirectoryNow, $subdirectoryNew)) {
+
+				$this->disconnect();
+
+				return true;
+
+			} else {
+
+				$this->disconnect();
+
+				return false;
+				
+			};
+
+		};
+
+		$this->disconnect();
+
+		return false;
+		
+	}
+
+	public function deleteDirectory(String $directory): Bool {
+
+		$connection = $this->connection();
+
+		ftp_chdir($connection, '/');
+
+		$subdiretories = str_replace(['\\', '/'], '/', $this->getDirectory() . DIRECTORY_SEPARATOR . $directory);
+
+		$recursiveDeleteDirectory = function($directory) use ($connection, &$recursiveDeleteDirectory) {
+
+			if ($connection) {
+
+				if (@ftp_delete($connection, $directory) === false) {
+
+				    if ($children = @ftp_nlist($connection, $directory)) {
+				      	foreach ($children as $subitem) {
+							if (($subitem != $directory . '/..') and ($subitem != $directory . '/.')) {
+								$recursiveDeleteDirectory($subitem);
+							};
+				      	};
+				    };
+
+				    if (@ftp_rmdir($connection, $directory)) {
+
+				    	return true;
+
+				    };
+
+				} else {
+
+					return true;
+
+				};
+
+			};
+
+			return false;
+
+		};
+
+		$returns = $recursiveDeleteDirectory($subdiretories);
+		
+		$this->disconnect();
+
+		return $returns;
+
+	}
 
 }
