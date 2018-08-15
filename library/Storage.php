@@ -6,7 +6,7 @@ class Storage {
 
     private $file;
 
-    public function setConnectionCode(String $connectionCode): Storage {
+    public function setConnectionCode(?String $connectionCode): Storage {
     	$this->connectionCode = $connectionCode;
     	return $this;
     }

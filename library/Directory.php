@@ -6,7 +6,7 @@ class Directory {
 
     private $directory;
 
-    public function setConnectionCode(String $connectionCode): Directory {
+    public function setConnectionCode(?String $connectionCode): Directory {
     	$this->connectionCode = $connectionCode;
     	return $this;
     }

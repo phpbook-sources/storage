@@ -5,6 +5,7 @@
 + [Manager](#manager)
 + [Validation](#validation)
 + [Parse](#parse)
++ [File Stage](#file-stage)
 
 ### About Storage
 
@@ -201,5 +202,111 @@ foreach($connections as $code => $connection) {
 	$item = \PHPBook\Storage\Parse::getByJson($stringJson);
 
 	$item = \PHPBook\Storage\Parse::getByXml($stringXML);
+
+```
+
+### File Stage
+
+```php
+
+// you can create a file stage to upload a file, clear the current file or simply keep the file data untouch
+	
+	/* default file schema */
+	$fileName = 'my-file.jpeg';
+	$filePath = 'my/file/path';
+	$connectionCode = 'my-connection-code'; //for default, use null or suppress the parameter
+
+	/* Uploads a file */
+	$statement = ''; //binary contents to upload
+	$fileStage = new \PHPBook\Storage\FileStage($statement, $fileName, $filePath, $connectionCode);
+
+	/* Clear a file if exists */
+	$statement = \PHPBook\Storage\FileStage::$Stage_Clear; //statement to clear the current file if exists
+	$fileStage = new \PHPBook\Storage\FileStage($statement, $fileName, $filePath, $connectionCode);
+
+	/* Keep a file untouch or without file */
+	$statement = \PHPBook\Storage\FileStage::$Stage_Keep; //statement to keep the current file or keep without file
+	$fileStage = new \PHPBook\Storage\FileStage($statement, $fileName, $filePath, $connectionCode);
+
+	/* After stage the file changes, you can persist, returns true or false to the operation */
+	/* When is upload the binary contents, the phpbook uploads the file */
+	/* When is stage clear, the phpbook clear the file */
+	/* When is stage keep, nothing changes */
+	$boolean = $fileStage->persist();
+
+	/* If you need, you can get the file stage contents. */
+	/* When is upload the binary, the phpbook retrieves the stage binary contents or null. */
+	/* When is stage clear, the phpbook retrieves null. */
+	/* When is stage keep, the phpbook retrieves the current file if exists otherwise returns null. */
+	$contents = $fileStage->contents();
+
+	/* The purpose of this implementation in PHP is a comprehensive guide to handling the files in your requests,
+	uploading, removing or keeping the file information as it currently stands. */
+
+//Implementation example
+
+	class Customer {
+		
+		private static $Photo_Path = 'my/file/path/to/photo';
+
+		private $id;
+
+		private $name;
+
+		private $photo;
+
+		public function __construct(String $name, String $photo) {
+
+			$this->id; //generate key
+
+			$this->edit($name, $photo);
+		}
+
+		public function edit(String $name, String $photo) {
+
+			$this->name = $name;
+
+			$this->photo = new \PHPBook\Storage\FileStage($photo, $this->getId(), Static::$Photo_Path);
+
+		}
+
+		public function getId(): Int {
+
+			return $this->id;
+
+		}
+
+		public function getName(): String {
+
+			return $this->name;
+
+		}
+
+		public function getPhoto(): ?String {
+
+			if (!$this->photo) {
+
+				$this->photo = new \PHPBook\Storage\FileStage(\PHPBook\Storage\FileStage::$Stage_Keep, $this->getId(), Static::$Photo_Path);
+
+			};
+
+			return $this->photo->contents();
+		}
+
+		public function save() {
+
+			//store id and name in the database
+
+			//store the stage photo in the storage
+			if ($this->photo) {
+
+				$this->photo->persist();
+				
+			};
+
+		}
+
+
+	}
 
 ```
