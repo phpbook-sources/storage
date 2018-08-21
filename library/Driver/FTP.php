@@ -170,7 +170,10 @@ class FTP extends Adapter  {
 			foreach($subdiretories as $directoy) {
 				$levels_directories .= $directoy . '/';
 				if (!@ftp_chdir($connection, $directoy)) {
-					ftp_mkdir($connection, $directoy);
+					if (($directoy) and (strlen($directoy))) {
+						ftp_mkdir($connection, $directoy);
+						ftp_chdir($connection, $directoy);
+					};
 				};
 			};
 
