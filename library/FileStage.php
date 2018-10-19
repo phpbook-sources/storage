@@ -1,6 +1,6 @@
 <?php namespace PHPBook\Storage;
 
-abstract class FileStage {
+class FileStage {
     
     public static $Stage_Clear = '@ClearFile';
 
