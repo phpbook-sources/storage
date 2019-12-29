@@ -105,5 +105,33 @@ class Directory {
     	return false;
 
     }
+
+    public function files(): ?Array {
+
+        $connection = \PHPBook\Storage\Configuration\Storage::getConnection($this->getConnectionCode());
+
+        if (($connection) and ($connection->getDriver())) {
+
+            try {
+                
+                return $connection->getDriver()->getDirectoryFiles($this->getDirectory());
+                
+            } catch(\Exception $e) {
+
+                if ($connection->getExceptionCatcher()) {
+
+                    $connection->getExceptionCatcher()($e->getMessage());
+                    
+                };
+
+                return [];
+
+            };
+            
+        };
+
+        return [];
+
+    }
   
 }

@@ -15,4 +15,6 @@ abstract class Adapter {
     public abstract function moveDirectory(String $directoryNow, String $directoryNew): Bool;
 
     public abstract function deleteDirectory(String $directory): Bool;
+
+    public abstract function getDirectoryFiles(String $directory): ?Array;
 }

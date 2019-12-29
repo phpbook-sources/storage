@@ -181,6 +181,12 @@ class AWSS3 extends Adapter {
 
 		curl_close($ch);
 
+		if ($httpstatus === 0) {
+
+			throw new \Exception('cannot connect the aws s3 server ' . $host_name);
+
+		}
+
 		return [$response, $httpstatus];
 
 	}
@@ -417,6 +423,81 @@ class AWSS3 extends Adapter {
 		};
 
 		return true;
+
+	}
+
+
+	public function getDirectoryFiles(String $directory): ?Array {
+		
+
+		$returns = [];
+
+		$parser = [];
+
+		$marker = '';
+
+		do {	
+
+			list($response, $httpstatus) = $this->resource('', null, 'GET', $marker."prefix=" . $directory);
+
+			$files = json_decode(json_encode(simplexml_load_string($response)), true);
+
+			$tryGetMore = false;
+
+			if (($httpstatus >= 200) and ($httpstatus <= 299)) {
+
+				if (array_key_exists('Contents', $files)) {
+
+					if (array_key_exists('Key', $files['Contents'])) {
+	
+						if ($files['Contents']['Key'] != $files['Prefix']) {
+		
+							$parser[] = $files['Contents']['Key'];
+
+							$marker = 'marker='.$files['Contents']['Key'].'&';
+
+							$tryGetMore = true;
+						};
+		
+					} else {
+
+						if (count($files['Contents']) > 0) {
+
+							$tryGetMore = true;
+
+						};
+		
+						foreach($files['Contents'] as $content) {
+		
+							$parser[] = $content['Key'];
+
+							$marker = 'marker='.$content['Key'].'&';
+			
+						};
+		
+					};
+
+				};
+
+			}
+
+		} while($tryGetMore);
+
+		foreach($parser as $key => $returnItem) {
+
+			$removeBaseDirectoryFromString = preg_replace("/" . str_replace('/', '\/', $directory) . "/", '', $returnItem, 1);
+
+			$removeFinalSlashFromDirectory = substr($removeBaseDirectoryFromString, -1) == '/' ? substr($removeBaseDirectoryFromString, 0, -1) : $removeBaseDirectoryFromString;
+
+			if ((strlen($removeFinalSlashFromDirectory) > 0) and (strpos($removeFinalSlashFromDirectory, '/') === false)) {
+
+				$returns[] = $removeFinalSlashFromDirectory;
+
+			};
+
+		};
+
+		return $returns;
 
 	}
 

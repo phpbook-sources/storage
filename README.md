@@ -144,6 +144,16 @@ foreach($connections as $code => $connection) {
 		//done
 	};
 
+	// get directory file names array
+	$contents = (new \PHPBook\Storage\Directory)
+			->setConnectionCode('other')
+			->setDirectory('path/in/storage/to/get/file/names/array')
+			->files();
+
+	if ($contents) {
+		//contents not null
+	};
+
 	// write directory, auto create missing parents directories
 	$boolean = (new \PHPBook\Storage\Directory)
 			->setDirectory('path/in/storage/to/files')

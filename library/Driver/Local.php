@@ -168,4 +168,23 @@ class Local extends Adapter  {
 
 	}
 
+	public function getDirectoryFiles(String $directory): ?Array {
+
+		$filenames = [];
+
+		$location = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $this->getDirectory()  . DIRECTORY_SEPARATOR . $directory);
+
+		foreach(scandir($location) as $filename) {
+		    
+		    if (($filename != '..') and ($filename != '.')) {
+
+				$filenames[] = $filename;
+
+			};
+		}
+
+		return $filenames;
+
+	}
+
 }

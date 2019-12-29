@@ -97,6 +97,12 @@ class FTP extends Adapter  {
 
 			};
 
+			if (!$this->connection) {
+
+				throw new \Exception('cannot connect the ftp server ' . $this->getHost());
+
+			};
+
 			return $this->connection;
 
 		};		
@@ -369,6 +375,34 @@ class FTP extends Adapter  {
 		$this->disconnect();
 
 		return $returns;
+
+	}
+
+	public function getDirectoryFiles(String $directory): ?Array {
+		
+		$connection = $this->connection();
+
+		$subdiretories = str_replace(['\\', '/'], '/', $this->getDirectory() . DIRECTORY_SEPARATOR . $directory);
+
+		$files = ftp_nlist($connection, $subdiretories);
+
+		$filenames = [];
+
+		foreach($files as $filepath) {
+
+			$filename = basename($filepath);
+
+			if (($filename != '..') and ($filename != '.')) {
+
+				$filenames[] = $filename;
+
+			};
+
+		};
+
+		$this->disconnect();
+
+		return $filenames;
 
 	}
 
