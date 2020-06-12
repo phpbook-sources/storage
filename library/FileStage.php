@@ -66,5 +66,33 @@ class FileStage {
         };
 
     }
+
+    public function mime(): ?String {
+
+        switch($this->statement) {
+            case Static::$Stage_Clear:
+                    return Null;
+                break;
+            case Static::$Stage_Keep:
+                    $contents = (new \PHPBook\Storage\Storage)
+                        ->setConnectionCode($this->connectionCode)
+                        ->setFile($this->filePath . DIRECTORY_SEPARATOR . $this->fileName)
+                        ->get();
+                    if ($contents) {
+                        $mimeType = new \finfo(FILEINFO_MIME);
+                        $fileMimeType = explode(';', $mimeType->buffer($contents))[0];
+                        return $fileMimeType;
+                    } else {
+                        return Null;
+                    };                    
+                break;
+            default:
+                    $mimeType = new \finfo(FILEINFO_MIME);
+                    $fileMimeType = explode(';', $mimeType->buffer($this->statement))[0];
+                    return $fileMimeType;
+                break;
+        };
+
+    }
     
 }
