@@ -250,6 +250,18 @@ foreach($connections as $code => $connection) {
 	/* When is stage keep, the phpbook retrieves the current file if exists otherwise returns null. */
 	$contents = $fileStage->contents();
 
+	/* Get file mime */
+	/* When is upload the binary, the phpbook retrieves the mime binary contents or null. */
+	/* When is stage clear, the phpbook retrieves null. */
+	/* When is stage keep, the phpbook retrieves the current file mime if exists otherwise returns null. */
+	$mime = $fileStage->mime();
+
+	/* Get file mime */
+	/* When is upload the binary, the phpbook retrieves the mime binary contents or null. */
+	/* When is stage clear, the phpbook retrieves null. */
+	/* When is stage keep, the phpbook retrieves the current file mime if exists otherwise returns null. */
+	$fileName = $fileStage->filename();
+
 	/* The purpose of this implementation in PHP is a comprehensive guide to handling the files in your requests,
 	uploading, removing or keeping the file information as it currently stands. */
 

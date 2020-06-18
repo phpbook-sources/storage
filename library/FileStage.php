@@ -32,12 +32,6 @@ class FileStage {
 
     }
 
-    public function filerename($fileName) {
-
-        $this->fileName = $fileName;
-
-    }
-
     public function persist(): Bool {       
 
         switch($this->statement) {
