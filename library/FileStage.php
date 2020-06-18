@@ -26,7 +26,19 @@ class FileStage {
 
     }
 
-    public function persist(): Bool {		
+    public function filename(): String {
+
+        return $this->fileName;
+
+    }
+
+    public function filerename($fileName) {
+
+        $this->fileName = $fileName;
+
+    }
+
+    public function persist(): Bool {       
 
         switch($this->statement) {
             case Static::$Stage_Clear:
@@ -48,7 +60,7 @@ class FileStage {
 
     }
 
-	public function contents(): ?String {
+    public function contents(): ?String {
 
         switch($this->statement) {
             case Static::$Stage_Clear:
