@@ -26,11 +26,24 @@ class FileStage {
 
     }
 
+    public function statement(): String {
+
+        return $this->statement;
+
+    }
+
     public function filename(): String {
 
         return $this->fileName;
 
     }
+
+    public function hash(): String {
+
+        return md5($this->contents());
+        
+    }
+
 
     public function persist(): Bool {       
 
