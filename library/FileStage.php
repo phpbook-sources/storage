@@ -13,6 +13,18 @@ class FileStage {
     private $filePath;
 
     private $connectionCode;
+
+    public static function GetStatementOrBinaryDecoded($prepare) {
+
+        if (($prepare == Static::$Stage_Clear) or ($prepare == Static::$Stage_Keep)) {
+
+            return $prepare;
+
+        }
+
+        return base64_decode($prepare);
+        
+    }
     
     public function __construct(String $statement, String $fileName, String $filePath, ?String $connectionCode = Null) {
 

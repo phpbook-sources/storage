@@ -227,7 +227,7 @@ foreach($connections as $code => $connection) {
 	$connectionCode = 'my-connection-code'; //for default, use null or suppress the parameter
 
 	/* Uploads a file */
-	$statement = ''; //binary contents to upload
+	$statement = 'binary'; //binary contents to upload
 	$fileStage = new \PHPBook\Storage\FileStage($statement, $fileName, $filePath, $connectionCode);
 
 	/* Clear a file if exists */
@@ -237,6 +237,13 @@ foreach($connections as $code => $connection) {
 	/* Keep a file untouch or without file */
 	$statement = \PHPBook\Storage\FileStage::$Stage_Keep; //statement to keep the current file or keep without file
 	$fileStage = new \PHPBook\Storage\FileStage($statement, $fileName, $filePath, $connectionCode);
+
+	/* Prepare a statement string or binary content that is encoded */
+	$statement = \PHPBook\Storage\FileStage::GetStatementOrBinaryDecoded('statement or encoded binary'); //returns the statement string or binary content decoded
+	$fileStage = new \PHPBook\Storage\FileStage($statement, $fileName, $filePath, $connectionCode);
+
+	/* Get file statement */
+	$fileName = $fileStage->statement();
 
 	/* After stage the file changes, you can persist, returns true or false to the operation */
 	/* When is upload the binary contents, the phpbook uploads the file */
@@ -255,6 +262,12 @@ foreach($connections as $code => $connection) {
 	/* When is stage clear, the phpbook retrieves null. */
 	/* When is stage keep, the phpbook retrieves the current file mime if exists otherwise returns null. */
 	$mime = $fileStage->mime();
+
+	/* Get file hash */
+	/* When is upload the binary, the phpbook retrieves the hash binary contents. */
+	/* When is stage clear, the phpbook retrieves null. */
+	/* When is stage keep, the phpbook retrieves the current file hash if exists otherwise returns null. */
+	$mime = $fileStage->hash();
 
 	/* Get file mime */
 	/* When is upload the binary, the phpbook retrieves the mime binary contents or null. */
